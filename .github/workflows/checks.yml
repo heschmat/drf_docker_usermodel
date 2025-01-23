@@ -1,0 +1,27 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-lint:
+    name: Test and Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-actions@v3
+        with:
+          username: ${{ vars.DH_USER }}
+          password: ${{ secrets.DH_TOKEN }}
+
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Test Application
+        run: docker compose run --rm web sh -c "python manage.py test"
+
+      - name: Lint Codebase
+        run: docker compose run --rm web sh -c "flake8 || exit 1"
