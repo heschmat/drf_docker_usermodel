@@ -16,7 +16,9 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password, **extra_fields):
         """Create, save & return a new user."""
-        user = self.model(email=email, **extra_fields)
+        if not email:
+            raise ValueError('Email cannot be blank!')
+        user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         # We pass `using=self._db` just in case  in the future we want to
         # add multiple databases. It's future proofing.
