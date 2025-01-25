@@ -41,3 +41,11 @@ class ModelTests(TestCase):
         """Make sure email cannot be blank upon user registration."""
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(email='', password='Whatever!')
+
+    def test_create_sueruser(self):
+        user = get_user_model().objects.create_superuser(
+            email='admin@example.com',
+            password='SuperUser!'
+        )
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
