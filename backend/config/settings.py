@@ -41,6 +41,8 @@ INSTALLED_APPS = [
 
     # 3rd party apps ----------------
     'rest_framework',
+    ## This comes with `drf`, but it's a separate app; hence register it separately.
+    'rest_framework.authtoken',
     'drf_spectacular',
 
     # Local apps --------------------

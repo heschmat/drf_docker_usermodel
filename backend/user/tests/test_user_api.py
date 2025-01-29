@@ -10,7 +10,10 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
-CREATE_USER_URL = reverse('user:create')
+URLS = {
+    'create_user': reverse('user:create'),
+    'token': reverse('user:token'),
+}
 
 
 def create_user(**params):
@@ -32,7 +35,7 @@ class PublicUserAPITests(TestCase):
             'password': 'Whatever!',
             'name': 'user-test'
         }
-        res = self.client.post(CREATE_USER_URL, payload)
+        res = self.client.post(URLS['create_user'], payload)
 
         # Make sure the user creation is successful.
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -52,7 +55,7 @@ class PublicUserAPITests(TestCase):
         }
         _ = create_user(**payload)
         # Try creating a new user with already registered user's email.
-        res = self.client.post(CREATE_USER_URL, payload)
+        res = self.client.post(URLS['create_user'], payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -68,9 +71,41 @@ class PublicUserAPITests(TestCase):
             'password': '1234567',  # a short password
         }
 
-        res = self.client.post(CREATE_USER_URL, payload)
+        res = self.client.post(URLS['create_user'], payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, msg=res.data)
 
         # Make sure that the user has not been created.
         user = get_user_model().objects.filter(email=payload['email'])
         self.assertFalse(user.exists())
+
+    def test_create_token_for_user(self):
+        """Test generates auth token for valid credentials."""
+        payload = {
+            'email': 'user@example.com',
+            'password': 'Whatever!',
+            'name': 'user-test'
+        }
+
+        _ = create_user(**payload)
+        # Authenticate with the same/correct payload.
+        res = self.client.post(URLS['token'], payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('token', res.data)
+
+    def test_create_token_bad_credentials_fail(self):
+        """Test auth fails if bad credentials sent."""
+        payload = {
+            'email': 'user@example.com',
+            'password': 'Whatever!',
+            'name': 'user-test'
+        }
+        _ = create_user(**payload)
+
+        # Authenticate with an incorrect password.
+        payload_bad = {'email': payload['email'], 'password': 'WrongPass!'}
+        res = self.client.post(URLS['token'], payload_bad)
+
+        # Make sure authentication fails & token is not sent back.
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('token', res.data)
